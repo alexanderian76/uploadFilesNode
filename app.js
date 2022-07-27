@@ -5,9 +5,11 @@ const cors  = require("cors");
 const router = require('./routes/index')
 const sequelize = require('./db')
 var bodyParser = require('body-parser')
+const errorHandler = require('./middleware/ErrorHandlingMiddleware')
 
 const testFolder = './uploads/';
 const fs = require('fs');
+const ApiError = require("./error/ApiError");
 
 
   
@@ -52,6 +54,8 @@ app.get("/get", function (req, res, next) {
       
     
 });
+
+app.use(errorHandler)
 
 const start = async () => {
     try {
