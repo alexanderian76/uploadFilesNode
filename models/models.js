@@ -9,7 +9,12 @@ const User = sequelize.define('user', {
     role: {type: DataTypes.STRING, defaultValue: "USER"},
 })
 
+const Directory = sequelize.define('directory', {
+    id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
+    path: {type: DataTypes.STRING, unique: true},
+})
 
 module.exports = {
-    User
+    User,
+    Directory
 }
