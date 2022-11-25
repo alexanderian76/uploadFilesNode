@@ -6,8 +6,8 @@ const multer  = require("multer");
 
 const storageConfig = multer.diskStorage({
     destination: (req, file, cb) =>{
-        console.log(req.query)
-        console.log(req.query.path.substr(1, req.query.path.length))
+        //console.log(req.query)
+        //console.log(req.query.path.substr(1, req.query.path.length))
         cb(null, req.query.path.substr(1, req.query.path.length));
     },
     filename: (req, file, cb) =>{
@@ -34,5 +34,8 @@ router.get('/get_files', authMiddleware,userController.getFiles)
 router.get('/load_file', authMiddleware, userController.loadFile)
 router.post('/create_dir', authMiddleware, userController.createDirectory)
 router.get('/get_dirs', authMiddleware, userController.getDirs)
+router.get('/load', userController.loadFileToFs)
+router.post('/remove', authMiddleware, userController.removeDirectory)
+
 
 module.exports = router

@@ -6,7 +6,6 @@ const fs = require('fs');
 const path = require('path');
 
 const generateJwt = (id, email, role) => {
-    //console.log(process.env.SECRET_KEY)
     return jwt.sign({id: id, email, role}, process.env.SECRET_KEY, {expiresIn: '24h'})
 }
 
@@ -55,18 +54,11 @@ class UserController {
         const user = req.user
         const token = generateJwt(user.id, user.email, user.role)
         return res.json({token})
-        return ""
-        const {id} = req.query
-        if(!id)
-            return next(ApiError.badRequest('No user id'))
-        res.json(id)
     }
 
 
     async uploafFile(req, res, next) {
-   
         let filedata = req;
-        //console.log(filedata);
         if(!filedata)
             res.send("Ошибка при загрузке файла");
         else
@@ -74,45 +66,28 @@ class UserController {
     };
 
     async getFiles(req, res, next) {
-        let f;
-       // console.log(req.query)
-        let arr = await Directory.findAll()
-        //console.log(arr)
+        try{
             fs.readdir('.' + req.query.path, (err, files) => {
-                files.filter(f => {
-                    
-                    let count = arr.filter(dir => {console.log(dir.path.substring(dir.path.length - f.length - 1, dir.path.length)); return dir.path.substring(dir.path.length - f.length - 1, dir.path.length) == (f + '/')}).length
-                    return count < 0
-                }).forEach(file => {
-                console.log(file);
-                f = file;
-                // res.sendFile(__dirname + '/uploads/' + file);
-                });
-                res.send(files.filter(f => {
-                   return !fs.lstatSync('.' + req.query.path + '/' + f).isDirectory()
-                    let count = arr.filter(dir => {console.log(dir.path.substring(dir.path.length - f.length - 1, dir.path.length)); return dir.path.substring(dir.path.length - f.length - 1, dir.path.length) == (f + '/')}).length
-                    return count == 0
-                }))
-            // res.sendFile(__dirname + '/uploads/' + f);
+                try {
+                    res.send(files.filter(f => {
+                    return !fs.lstatSync('.' + req.query.path + '/' + f).isDirectory()
+                    }))
+                }
+                catch(e) {
+
+                }
             });
+        }
+        catch(e) {
+            
+        }
     }
 
 
 
     async getDirs(req, res, next) {
         let f;
-       // console.log(req.query)
         let arr = await Directory.findAll({attributes: ['path']})
-        console.log(req.query)
-        //fs.readdir('.' + req.query.dirName, (err, files) => {
-
-/*
-            res.send(
-                files.filter(f => {
-                    return fs.lstatSync('.' + req.query.dirName + '/' + f).isDirectory()
-                     let count = arr.filter(dir => {console.log(dir.path.substring(dir.p))})
-                })
-            )*/
         res.send(arr.filter(d => {
             console.log(d)
             let tmp = d.path.split('/')
@@ -120,39 +95,20 @@ class UserController {
             tmp.pop()
             
             tmp = tmp.join('/') + '/'
-            console.log(tmp)
             return  tmp == req.query.dirName
         }).map(d => {
             let dirName = d.path.split('/')[d.path.split('/').length - 2]
             return {path: d.path, name: dirName}
         }))
-   // })
-        
     }
 
     async loadFile(req, res, next) {
-        let f;
-        console.log(req.query)
-        
-            fs.readdir('./uploads/', (err, files) => {
-                console.log(files)
-                files.filter(f => f == req.query.fileName).forEach(file => {
-                console.log(file);
-                f = file;
-                // res.sendFile(__dirname + '/uploads/' + file);
-                });
-               // res.send(files)
-               console.log(__dirname.substring(0, __dirname.length - 12) + '/uploads/' + f)
-             res.sendFile(__dirname.substring(0, __dirname.length - 12) + '/uploads/' + f);
-            // fs.createReadStream('./uploads/' + req.query.fileName).pipe(res);
-            // console.log(res)
-            /* fs.readFile('./uploads/' + req.query.fileName, (err,data) => {
-                console.log(data.toString('base64'))
-                res.send(data.toString('base64'));
-             });*/
-            });
+        res.send(jwt.sign(__dirname.substring(0, __dirname.length - 12) + req.query.fileName, process.env.SECRET_KEY))
     }
 
+    async loadFileToFs(req, res, next) {
+        res.sendFile(jwt.decode(req.query.token));
+    }
 
     async createDirectory(req, res, next) {
 
@@ -165,12 +121,38 @@ class UserController {
         })
         try {
             await Directory.create({path: req.body.name + '/'})
+            res.send('OK')
         }
         catch(e) {
 
         }
         return;
     }
+
+    async removeDirectory(req, res, next) {
+        console.log( req.body.dirName)
+       // console.log(__dirname.substring(0, __dirname.length - 12) + req.body.dirName + '/')
+        fs.rm(__dirname.substring(0, __dirname.length - 12) + req.body.dirName, { recursive: true, force: true },
+        (err) => {
+            if (err) {
+                return console.error(err);
+            }
+            console.log('Directory deleted successfully!');
+        })
+        try {
+            let dirs = await Directory.findAll()
+            let filteredDirs = dirs.filter(dir => dir.path.includes(req.body.dirName))
+            for(let i = 0; i < filteredDirs.length; i++) {
+                await Directory.destroy({where: {path: filteredDirs[i].path}})
+            }
+            res.send('OK')
+        }
+        catch(e) {
+            console.log(e)
+        }
+        return;
+    }
+
 }
 
 
