@@ -87,7 +87,17 @@ class UserController {
 
     async getDirs(req, res, next) {
         let f;
-        let arr = await Directory.findAll({attributes: ['path']})
+        fs.readdir('.' + req.query.dirName, (err, files) => {
+            try {
+                res.send(files.filter(f => {
+                return fs.lstatSync('.' + req.query.dirName + '/' + f).isDirectory()
+                }))
+            }
+            catch(e) {
+
+            }
+        });
+        /*let arr = await Directory.findAll({attributes: ['path']})
         res.send(arr.filter(d => {
             console.log(d)
             let tmp = d.path.split('/')
@@ -99,7 +109,7 @@ class UserController {
         }).map(d => {
             let dirName = d.path.split('/')[d.path.split('/').length - 2]
             return {path: d.path, name: dirName}
-        }))
+        }))*/
     }
 
     async loadFile(req, res, next) {
@@ -118,14 +128,15 @@ class UserController {
                 return console.error(err);
             }
             console.log('Directory created successfully!');
+            res.send('OK')
         })
-        try {
+       /* try {
             await Directory.create({path: req.body.name + '/'})
             res.send('OK')
         }
         catch(e) {
 
-        }
+        }*/
         return;
     }
 
@@ -138,8 +149,9 @@ class UserController {
                 return console.error(err);
             }
             console.log('Directory deleted successfully!');
+            res.send('OK')
         })
-        try {
+        /*try {
             let dirs = await Directory.findAll()
             let filteredDirs = dirs.filter(dir => dir.path.includes(req.body.dirName))
             for(let i = 0; i < filteredDirs.length; i++) {
@@ -149,7 +161,7 @@ class UserController {
         }
         catch(e) {
             console.log(e)
-        }
+        }*/
         return;
     }
 
