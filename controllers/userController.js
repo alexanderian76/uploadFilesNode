@@ -23,11 +23,24 @@ class UserController {
             return next(ApiError.badRequest('User already exists'))
         }
 
+        
         const hashPassword = await bcrypt.hash(password, 5)
         const user = await User.create({email, role, password: hashPassword})
+
         //const basket = await Basket.create({userId: user.id})
         const token = generateJwt(user.id, user.email, user.role)
 
+        //---------------------------Creation dir after registration--------------------------------------- 
+
+        fs.mkdir(__dirname.substring(0, __dirname.length - 11) + user.email + '/', (err) => {
+            if (err) {
+                return console.error(err);
+            }
+            console.log('Directory created successfully! Registration method!');
+            
+        })
+
+        //------------------------------------------------------------------
         return res.json({token})
     }
 
@@ -66,6 +79,8 @@ class UserController {
     };
 
     async getFiles(req, res, next) {
+        if(req.user.email != req.query.path.split('/')[1])
+            return next(ApiError.badRequest('Incorrect user'))
         try{
             fs.readdir('.' + req.query.path, (err, files) => {
                 try {
@@ -87,6 +102,10 @@ class UserController {
 
     async getDirs(req, res, next) {
         let f;
+        console.log(req.user.email)
+        console.log(req.query.dirName.split('/')[1])
+        if(req.user.email != req.query.dirName.split('/')[1])
+            return next(ApiError.badRequest('Incorrect user'))
         fs.readdir('.' + req.query.dirName, (err, files) => {
             try {
                 res.send(files.filter(f => {
