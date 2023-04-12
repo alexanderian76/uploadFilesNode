@@ -1,9 +1,11 @@
 const ApiError = require('../error/ApiError');
 const bcrypt = require('bcrypt')
-const {User, Directory} = require('../models/models')
+const {User, Directory, Files} = require('../models/models')
 const jwt = require('jsonwebtoken')
 const fs = require('fs');
 const path = require('path');
+const { json } = require('body-parser');
+const { response } = require('express');
 
 const generateJwt = (id, email, role) => {
     return jwt.sign({id: id, email, role}, process.env.SECRET_KEY, {expiresIn: '24h'})
@@ -72,21 +74,50 @@ class UserController {
 
     async uploafFile(req, res, next) {
         let filedata = req;
+        console.log(req)
         if(!filedata)
             res.send("Ошибка при загрузке файла");
-        else
+        else {
+           // let user = await User.findOne({where: {email : req.query.user}})
+          // await Files.create({userId: user.id, path: req.query.fileName})
             res.send("Файл загружен");
+        }
     };
 
+
+    async getUserFiles(req, res, next) {
+        //if(req.user.email != req.query.path.split('/')[1])
+          //  return next(ApiError.badRequest('Incorrect user'))
+       // console.log(req.query)
+        try{
+            
+            Files.findAll({attributes: ['path'], where: {userId: req.user.id}}).then(response => {
+                let tmpArr = []
+                response.forEach(item => {
+                    tmpArr.push(item.path)
+                })
+                res.send(tmpArr)
+            })
+            
+            
+                
+               
+        }
+        catch(e) {
+            
+        }
+    }
+
     async getFiles(req, res, next) {
-        if(req.user.email != req.query.path.split('/')[1])
-            return next(ApiError.badRequest('Incorrect user'))
+        //if(req.user.email != req.query.path.split('/')[1])
+          //  return next(ApiError.badRequest('Incorrect user'))
+       // console.log(req.query)
         try{
             fs.readdir('.' + req.query.path, (err, files) => {
                 try {
                     res.send(files.filter(f => {
-                    return !fs.lstatSync('.' + req.query.path + '/' + f).isDirectory()
-                    }))
+                    return !fs.lstatSync('.' + req.query.path + '/' + f).isDirectory() && (req.query.files === undefined || req.query.files.includes(f))
+                    }).slice(0,req.query.count))
                 }
                 catch(e) {
 
@@ -104,8 +135,8 @@ class UserController {
         let f;
         console.log(req.user.email)
         console.log(req.query.dirName.split('/')[1])
-        if(req.user.email != req.query.dirName.split('/')[1])
-            return next(ApiError.badRequest('Incorrect user'))
+       // if(req.user.email != req.query.dirName.split('/')[1])
+        //    return next(ApiError.badRequest('Incorrect user'))
         fs.readdir('.' + req.query.dirName, (err, files) => {
             try {
                 res.send(files.filter(f => {
@@ -129,6 +160,16 @@ class UserController {
             let dirName = d.path.split('/')[d.path.split('/').length - 2]
             return {path: d.path, name: dirName}
         }))*/
+    }
+
+    async addFileToLibraty(req, res, next) {
+        Files.create({userId: req.user.id, path: req.query.path})
+        res.send('OK')
+    }
+
+    async removeFileFromLibraty(req, res, next) {
+        Files.destroy({where: {userId: req.user.id, path: req.query.path}})
+        res.send('OK')
     }
 
     async loadFile(req, res, next) {

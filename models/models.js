@@ -14,7 +14,15 @@ const Directory = sequelize.define('directory', {
     path: {type: DataTypes.STRING, unique: true},
 })
 
+
+const Files = sequelize.define('files', {
+    id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
+    path: {type: DataTypes.STRING},
+    userId: {type: DataTypes.INTEGER},
+})
+
 module.exports = {
     User,
-    Directory
+    Directory,
+    Files
 }
