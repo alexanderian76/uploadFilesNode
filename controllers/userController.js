@@ -68,7 +68,8 @@ class UserController {
     async check(req, res, next) {
         const user = req.user
         const token = generateJwt(user.id, user.email, user.role)
-        return res.json({token})
+        res.json({token})
+        console.log('check after')
     }
 
 
@@ -94,7 +95,8 @@ class UserController {
             Files.findAll({attributes: ['path'], where: {userId: req.user.id}}).then(response => {
                 let tmpArr = []
                 response.forEach(item => {
-                    tmpArr.push(item.path)
+                    if(item.path.toLowerCase().includes(req.query.search.toLowerCase()) || req.query.search === undefined || req.query.search === "")
+                        tmpArr.push(item.path)
                 })
                 res.send(tmpArr)
             })
@@ -111,18 +113,26 @@ class UserController {
     async getFiles(req, res, next) {
         //if(req.user.email != req.query.path.split('/')[1])
           //  return next(ApiError.badRequest('Incorrect user'))
-       // console.log(req.query)
+        console.log(req.query)
         try{
-            fs.readdir('.' + req.query.path, (err, files) => {
+           /* fs.readdir('.' + req.query.path, (err, files) => {
                 try {
                     res.send(files.filter(f => {
-                    return !fs.lstatSync('.' + req.query.path + '/' + f).isDirectory() && (req.query.files === undefined || req.query.files.includes(f))
+                    return !fs.lstatSync('.' + req.query.path + '/' + f).isDirectory() && (req.query.search === undefined ||  f.toLowerCase().includes(req.query.search.toLowerCase()) || req.query.search === "")
                     }).slice(0,req.query.count))
                 }
                 catch(e) {
 
                 }
-            });
+            });*/
+            Files.findAll({attributes: ['path'], where: {userId: null}, limit: req.query.count}).then(response => {
+                let tmpArr = []
+                response.forEach(item => {
+                    if(item.path.toLowerCase().includes(req.query.search.toLowerCase()) || req.query.search === undefined || req.query.search === "")
+                        tmpArr.push(item.path)
+                })
+                res.send(tmpArr)
+            })
         }
         catch(e) {
             
@@ -163,12 +173,12 @@ class UserController {
     }
 
     async addFileToLibraty(req, res, next) {
-        Files.create({userId: req.user.id, path: req.query.path})
+        Files.create({userId: req.user.id, path: decodeURI(req.query.path)})
         res.send('OK')
     }
 
     async removeFileFromLibraty(req, res, next) {
-        Files.destroy({where: {userId: req.user.id, path: req.query.path}})
+        Files.destroy({where: {userId: req.user.id, path: decodeURI(req.query.path)}})
         res.send('OK')
     }
 

@@ -5,6 +5,7 @@ const authMiddleware = require('../middleware/authMiddleware')
 const multer  = require("multer");
 const {User, Directory, Files} = require('../models/models')
 
+
 const storageConfig = multer.diskStorage({
     destination: (req, file, cb) =>{
         //console.log(req.query)
@@ -12,7 +13,7 @@ const storageConfig = multer.diskStorage({
         cb(null, req.query.path.substr(1, req.query.path.length));
     },
     filename: (req, file, cb) =>{
-        cb(null, file.originalname);
+        cb(null, decodeURI(file.originalname));
     }
 });
 
@@ -21,7 +22,8 @@ function uploafFile(req, res, next) {
     let {filedata} = req.files;
     console.log(filedata)
     filedata.forEach(element => {
-        Files.create({path: element.originalname, userId: req.user.id})
+        Files.create({path: decodeURI(element.originalname), userId: req.user.id})
+        Files.create({path: decodeURI(element.originalname), userId: null})
     });
    // console.log(filedata);
     if(!filedata)
