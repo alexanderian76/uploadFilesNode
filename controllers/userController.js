@@ -92,7 +92,7 @@ class UserController {
        // console.log(req.query)
         try{
             
-            Files.findAll({attributes: ['path'], where: {userId: req.user.id}}).then(response => {
+            Files.findAll({attributes: ['path'], where: {userId: req.user.id}, order: [['createdAt', 'DESC']]}).then(response => {
                 let tmpArr = []
                 response.forEach(item => {
                     if(item.path.toLowerCase().includes(req.query.search.toLowerCase()) || req.query.search === undefined || req.query.search === "")
@@ -110,6 +110,36 @@ class UserController {
         }
     }
 
+    async getFilesFs(req, res, next) {
+        fs.readdir('.' + req.query.path, (err, files) => {
+            try {
+                res.send(files.filter(f => {
+                return !fs.lstatSync('.' + req.query.path + '/' + f).isDirectory() && (req.query.search === undefined ||  f.toLowerCase().includes(req.query.search.toLowerCase()) || req.query.search === "")
+                }).slice(0,req.query.count))
+            }
+            catch(e) {
+
+            }
+        });
+    }
+
+    async getDirsFs(req, res, next) {
+        let arr = await Directory.findAll({attributes: ['path']})
+        res.send(arr.filter(d => {
+            console.log(d)
+            let tmp = d.path.split('/')
+            tmp.pop()
+            tmp.pop()
+            
+            tmp = tmp.join('/') + '/'
+            return  tmp == req.query.dirName
+        }).map(d => {
+            let dirName = d.path.split('/')[d.path.split('/').length - 2]
+            return {path: d.path, name: dirName}
+        }))
+    }
+
+
     async getFiles(req, res, next) {
         //if(req.user.email != req.query.path.split('/')[1])
           //  return next(ApiError.badRequest('Incorrect user'))
@@ -125,7 +155,7 @@ class UserController {
 
                 }
             });*/
-            Files.findAll({attributes: ['path'], where: {userId: null}, limit: req.query.count}).then(response => {
+            Files.findAll({attributes: ['path'], where: {userId: null}, limit: req.query.count, order: [['createdAt', 'DESC']]}).then(response => {
                 let tmpArr = []
                 response.forEach(item => {
                     if(item.path.toLowerCase().includes(req.query.search.toLowerCase()) || req.query.search === undefined || req.query.search === "")
