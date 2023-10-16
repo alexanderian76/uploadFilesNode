@@ -95,7 +95,7 @@ class UserController {
             Files.findAll({attributes: ['path'], where: {userId: req.user.id}, order: [['createdAt', 'DESC']]}).then(response => {
                 let tmpArr = []
                 response.forEach(item => {
-                    if(item.path.toLowerCase().includes(req.query.search.toLowerCase()) || req.query.search === undefined || req.query.search === "")
+                    if(req.query.search === undefined || req.query.search === "" || item.path.toLowerCase().includes(req.query.search.toLowerCase()))
                         tmpArr.push(item.path)
                 })
                 res.send(tmpArr)
@@ -158,7 +158,7 @@ class UserController {
             Files.findAll({attributes: ['path'], where: {userId: null}, limit: req.query.count, order: [['createdAt', 'DESC']]}).then(response => {
                 let tmpArr = []
                 response.forEach(item => {
-                    if(item.path.toLowerCase().includes(req.query.search.toLowerCase()) || req.query.search === undefined || req.query.search === "")
+                    if(req.query.search === undefined || req.query.search === "" || item.path.toLowerCase().includes(req.query.search.toLowerCase()))
                         tmpArr.push(item.path)
                 })
                 res.send(tmpArr)
